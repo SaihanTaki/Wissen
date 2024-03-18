@@ -1,3 +1,4 @@
+from fileinput import filename
 import os
 import shutil
 import streamlit as st
@@ -7,8 +8,9 @@ from langchain_community.llms.google_palm import GooglePalm
 from langchain_community.embeddings import GooglePalmEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.chains.question_answering import load_qa_chain
+from langchain.prompts.prompt import PromptTemplate
 from langchain.chains import ConversationalRetrievalChain
+from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from dotenv import load_dotenv
 
@@ -29,7 +31,7 @@ def get_llm(temparature=0.1):
 def get_file_text(files):
     text = ""
     for file in files:
-        text += File2Text(file)()
+        text += f"{file.name}" + "\n" + File2Text(file)()
     return text
 
 
@@ -66,12 +68,41 @@ def get_vectorstore(text_chunks):
     return vector_db
 
 
-def get_conversation_chain(vectorstore):
+def get_conversation_chain(vectorstore=None):
     llm = get_llm(temparature=0.0)
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-    conversation_chain = ConversationalRetrievalChain.from_llm(
-        llm=llm, retriever=vectorstore.as_retriever(), memory=memory
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        human_prefix="Human",
+        ai_prefix="AI Aassistant",
+        return_messages=True,
     )
+    if vectorstore:
+        conversation_chain = ConversationalRetrievalChain.from_llm(
+            llm=llm, retriever=vectorstore.as_retriever(), memory=memory
+        )
+    else:
+        template = """The following is a friendly conversation between a human and an AI.
+                The AI is talkative and provides lots of specific details from its context.
+                If the AI does not know the answer to a question, it truthfully says it does\
+                not know.
+                If users ask abot questions related to any document say the following
+                - It looks like you haven't uploaded any document yet.
+                Current conversation:
+                {chat_history}
+                Human: {question}
+                AI Assistant:"""
+        PROMPT = PromptTemplate(
+            input_variables=["chat_history", "question"], template=template
+        )
+
+        conversation_chain = ConversationChain(
+            prompt=PROMPT,
+            llm=llm,
+            verbose=False,
+            memory=memory,
+            input_key="question",
+            output_key="answer",
+        )
     return conversation_chain
 
 
@@ -79,21 +110,29 @@ def main():
 
     load_dotenv()
 
-    if os.path.exists("vectorstore"):
-        shutil.rmtree("vectorstore")
+    st.set_page_config(page_title="Wissen", page_icon=":books:")
 
-    st.set_page_config(page_title="Chat with multiple PDFs", page_icon=":books:")
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "conversation" not in st.session_state:
+        st.session_state.conversation = get_conversation_chain()
 
     # Sidebar
     with st.sidebar:
-        st.title("PdfAI")
+        st.title("Wissen")
+
         st.markdown(
             """
+            ##### `Wissen` is the German of `Knowledge`
+            
             ## About
-            This app is an LLL-powered pdf chatbot uisng
+            This app is an LLL-powered multi-document chatbot uisng
             - Streamlit
             - Langchain
             - GooglePalm
+
+           
             """
         )
         st.subheader("Your Documents")
@@ -102,27 +141,28 @@ def main():
             type=["pdf", "docx", "txt"],
             accept_multiple_files=True,
         )
+
         if st.button("Process"):
+            if os.path.exists("vectorstore"):
+                shutil.rmtree("vectorstore")
             with st.spinner("Processing"):
-                # get pdf text
-                raw_text = get_file_text(files)
-                # get the text chunks
-                text_chunks = get_text_chunks(raw_text)
-                # create vector store
-                vectorstore = get_vectorstore(text_chunks)
-                # create conversation chain
-                st.session_state.conversation = get_conversation_chain(vectorstore)
+                if files:
+                    # get pdf text
+                    raw_text = get_file_text(files)
+                    # get the text chunks
+                    text_chunks = get_text_chunks(raw_text)
+                    # create vector store
+                    vectorstore = get_vectorstore(text_chunks)
+                    # create conversation chain
+                    st.session_state.conversation = get_conversation_chain(vectorstore)
+                else:
+                    st.session_state.conversation = get_conversation_chain()
 
         add_vertical_space(5)
         st.write("Made by Abdullah Saihan Taki!")
 
-    # Initialize chat history
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    if "conversation" not in st.session_state:
-        st.session_state.conversation = None
+    st.header("Wissen: Chat with multiple Documents")
 
-    st.header("Chat with multiple PDFs :books:")
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
