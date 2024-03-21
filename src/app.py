@@ -4,6 +4,7 @@ import streamlit as st
 from streamlit_extras.add_vertical_space import add_vertical_space
 from handlefiles import File2Text
 from langchain_community.llms.google_palm import GooglePalm
+from langchain_community.chat_models.google_palm import ChatGooglePalm
 from langchain_community.embeddings import GooglePalmEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -14,7 +15,7 @@ from langchain.memory import ConversationBufferMemory
 from dotenv import load_dotenv
 
 
-def get_llm(temparature=0.1):
+def get_llm(temparature=0.0):
     # Workaround on first initialization of googl palm raising NotImplemetedError
     try:
         llm = GooglePalm(
@@ -22,6 +23,19 @@ def get_llm(temparature=0.1):
         )
     except NotImplementedError:
         llm = GooglePalm(
+            google_api_key=os.environ["GOOGLE_API_KEY"], temparature=temparature
+        )
+    return llm
+
+
+def get_chat_llm(temparature=0.3):
+    # Workaround on first initialization of googl palm raising NotImplemetedError
+    try:
+        llm = ChatGooglePalm(
+            google_api_key=os.environ["GOOGLE_API_KEY"], temparature=temparature
+        )
+    except NotImplementedError:
+        llm = ChatGooglePalm(
             google_api_key=os.environ["GOOGLE_API_KEY"], temparature=temparature
         )
     return llm
@@ -68,14 +82,23 @@ def get_vectorstore(text_chunks):
 
 
 def get_conversation_chain(vectorstore=None):
-    llm = get_llm(temparature=0.0)
+
     memory = ConversationBufferMemory(
         memory_key="chat_history",
         human_prefix="Human",
         ai_prefix="AI Aassistant",
         return_messages=True,
     )
+
+    chat_memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        human_prefix="Human",
+        ai_prefix="AI Aassistant",
+        return_messages=True,
+    )
+
     if vectorstore:
+        llm = get_llm(temparature=0.0)
         conversation_chain = ConversationalRetrievalChain.from_llm(
             llm=llm, retriever=vectorstore.as_retriever(), memory=memory
         )
@@ -93,12 +116,12 @@ def get_conversation_chain(vectorstore=None):
         PROMPT = PromptTemplate(
             input_variables=["chat_history", "question"], template=template
         )
-
+        llm = get_chat_llm(0.3)
         conversation_chain = ConversationChain(
             prompt=PROMPT,
             llm=llm,
             verbose=False,
-            memory=memory,
+            memory=chat_memory,
             input_key="question",
             output_key="answer",
         )
@@ -125,7 +148,8 @@ def main():
             """
             #### *In  German, `Wissen` means `Knowledge`*
             ## About
-            Wissen is a  LLM-powered chatbot that can handle conversations across multiple documents.
+            Wissen is a  LLM-powered chatbot that can handle conversations across \
+            multiple documents.
             This app is built with
             - Langchain
             - Google Palm
