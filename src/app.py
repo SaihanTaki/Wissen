@@ -179,7 +179,16 @@ def main():
                 else:
                     st.session_state.conversation = get_conversation_chain()
 
-        add_vertical_space(5)
+        st.markdown(
+            """
+            #### Instructions
+            The app starts in normal conversation mode. When you add files and press \
+            the process button, it will enter in the document chat mode. Clear all the \
+            uploaded files and press the process button again if you want to switch to \
+            normal conversation mode.
+            """
+        )
+        add_vertical_space(3)
         st.markdown(
             "#### *Made by [Abdullah Saihan Taki](https://www.linkedin.com/in/saihantaki/)*"
         )
@@ -191,7 +200,7 @@ def main():
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    prompt = st.chat_input("Ask questions about your document")
+    prompt = st.chat_input("Ask questions about your uploaded documents")
 
     if prompt:
         # Add user message to chat history
