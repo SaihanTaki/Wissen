@@ -1,6 +1,9 @@
-<h1 style="text-align: center">Wissen</h1> 
+<div style="align: center">
+<h1>Wissen</h1> 
+<h4 style="font-style: italic">In  German, <code>Wissen</code> means <code>Knowledge</code></h4>
+</div>
 
-#### *In  German, `Wissen` means `Knowledge`*
+
 
 ## 💡 About
 Wissen is a  LLM-powered chatbot that can handle conversations across multiple documents.
@@ -8,6 +11,22 @@ This app is built with
 - Langchain
 - Google Palm
 - Streamlit
+
+**Wissen has two ways to chat with you:**
+
+1. `Document Q&A Mode:`
+Uses Google's powerful Palm Base model for answering your questions.
+Activated when you upload documents to Wissen.
+In this mode, Wissen can only answer questions about the documents you've uploaded.
+2. `Normal Conversation Mode:`
+This is the default mode when you start Wissen.
+Uses Google's Palm Chat model for open-ended conversation.
+Ask anything you want in this mode.
+Wissen also switches to this mode when you clear all uploaded documents.
+
+Switching between modes is automatic:
+- Uploading documents puts Wissen in Document Q&A mode.
+- Clearing all documents brings Wissen back to Normal Conversation mode.
 
 ## 🛠️ Installation
 
