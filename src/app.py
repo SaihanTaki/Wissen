@@ -1,4 +1,3 @@
-from fileinput import filename
 import os
 import shutil
 import streamlit as st
@@ -124,15 +123,13 @@ def main():
 
         st.markdown(
             """
-            ##### `Wissen` is the German of `Knowledge`
-            
+            #### *In  German, `Wissen` means `Knowledge`*
             ## About
-            This app is an LLL-powered multi-document chatbot uisng
-            - Streamlit
+            Wissen is a  LLM-powered chatbot that can handle conversations across multiple documents.
+            This app is built with
             - Langchain
-            - GooglePalm
-
-           
+            - Google Palm
+            - Streamlit
             """
         )
         st.subheader("Your Documents")
@@ -159,7 +156,9 @@ def main():
                     st.session_state.conversation = get_conversation_chain()
 
         add_vertical_space(5)
-        st.write("Made by Abdullah Saihan Taki!")
+        st.markdown(
+            "#### *Made by [Abdullah Saihan Taki](https://www.linkedin.com/in/saihantaki/)*"
+        )
 
     st.header("Wissen: Chat with multiple Documents")
 
